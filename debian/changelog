@@ -23,6 +23,8 @@ gmrun (0.9.2+git20130911-1) UNRELEASED; urgency=medium
   * debian/compat: Bumped to 9.
   * debian/rules:
     + add autoreconf.
+    + use xz to compress binary file.
+  * Use xz to compress sources.
 
  -- Mateusz Łukasik <mati75@linuxmint.pl>  Sat, 28 Dec 2013 22:04:50 +0100
 
