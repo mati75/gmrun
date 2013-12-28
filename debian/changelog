@@ -1,3 +1,14 @@
+gmrun (0.9.2+git20130911-1) UNRELEASED; urgency=medium
+
+  * New maintainer.
+  * Merged latest upstream git tree: (Closes: #720688)
+    + fix "gmrun: FTBFS: dpkg-buildpackage: error: dpkg-source -b 
+      gmrun-0.9.2 gave error exit status 2" (Closes: #643135)
+    + fix "[Mayhem] Bug report on gmrun: gmrun crashes with exit 
+      status 139" (Closes: #715974)
+
+ -- Mateusz Łukasik <mati75@linuxmint.pl>  Sat, 28 Dec 2013 22:04:50 +0100
+
 gmrun (0.9.2-2.1) unstable; urgency=low
 
   * Non-maintainer upload.
