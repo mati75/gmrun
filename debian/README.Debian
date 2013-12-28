@@ -1,0 +1,17 @@
+gmrun for Debian
+----------------
+
+Please see /etc/gmrunrc for an example configuration file.
+Place it in ~/.gmrunrc if you wish to customize gmrun.
+
+Also of note is that in order to use complex commands like:
+
+"cat ~/.xsession | grep ssh | sh > /dev/null 2>&1"
+
+you must use the "shell" URL; ie, type in:
+
+shell:cat ~/.xsession | grep ssh | sh > /dev/null 2>&1
+
+This will pass the command to 'sh -c'.
+
+ -- David B Harris <david@eelf.ddts.net>, Wed,  8 Aug 2001 08:05:49 -0400

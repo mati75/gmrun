@@ -1,0 +1,11 @@
+10-escaping.patch
+20-includes.patch
+30-fix-gcc-4.3-build.patch
+40-history_string.patch
+50-empty-history.patch
+60-fix_gtkcompletionline.patch
+70-cmdline.patch
+80-selectoption.patch
+90-window_placement.patch
+100-gmrunrc.patch
+debian-changes-0.9.2-2.1

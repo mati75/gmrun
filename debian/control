@@ -1,0 +1,16 @@
+Source: gmrun
+Section: x11
+Priority: optional
+Maintainer: Alexandre De Dommelin <adedommelin@tuxz.net>
+Build-Depends: debhelper (>= 7), libgtk2.0-dev, libpopt-dev
+Standards-Version: 3.8.4
+Homepage: http://sourceforge.net/projects/gmrun/
+
+Package: gmrun
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Featureful CLI-like GTK+ application launcher
+ This is gmrun; a small fast, yet featureful application launcher for use
+ under X11, which uses GTK+ widget toolkit. Some features include tab-
+ completion of file names and programs, history, easy x-terminal-emulator
+ launching, and URL handling.
