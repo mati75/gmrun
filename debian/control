@@ -5,6 +5,8 @@ Maintainer: Mateusz Łukasik <mati75@linuxmint.pl>
 Build-Depends: debhelper (>= 9), libgtk2.0-dev, libpopt-dev
 Standards-Version: 3.9.5
 Homepage: http://sourceforge.net/projects/gmrun/
+Vcs-Git: git://github.com/mati75/gmrun.git
+Vcs-Browser: https://github.com/mati75/gmrun.git
 
 Package: gmrun
 Architecture: any
