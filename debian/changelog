@@ -6,10 +6,19 @@ gmrun (0.9.2+git20130911-1) UNRELEASED; urgency=medium
       gmrun-0.9.2 gave error exit status 2" (Closes: #643135)
     + fix "[Mayhem] Bug report on gmrun: gmrun crashes with exit 
       status 139" (Closes: #715974)
+    + fix "Autocomplete not relative to the current directory"
+      (Closes: #470537)
   * debian/control:
     + Bump Standards-Version to 3.9.5.
     + Bump debhelper build-dep to 9.
     + Add VCS-* fields. (Closes: #720673)
+  * Patch working:
+    + update 30-fix-gcc-4.3-build.patch.
+    + remove 60-fix_gtkcompletionline.patch -- included upstream.
+    + update 70-cmdline.patch.
+    + update 80-selectoption.patch.
+    + remove 90-window_placement.patch -- included upstream.
+    + remove debian-changes-0.9.2-2.1 -- included upstream.
 
  -- Mateusz Łukasik <mati75@linuxmint.pl>  Sat, 28 Dec 2013 22:04:50 +0100
 

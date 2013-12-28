@@ -1,11 +1,10 @@
-# Description: add "Selected" config option
-# Author: Fernando Vezzosi <fv@linuxvar.it>
+Description: add "Selected" config option
+Author: Fernando Vezzosi <fv@linuxvar.it>
+Last-Update: <2013-12-28>
 
-Index: gmrun-0.9.2/src/main.cc
-===================================================================
---- gmrun-0.9.2.orig/src/main.cc	2010-02-03 12:37:52.455767905 +0800
-+++ gmrun-0.9.2/src/main.cc	2010-02-03 12:38:46.801743816 +0800
-@@ -615,6 +615,10 @@
+--- a/src/main.cc
++++ b/src/main.cc
+@@ -785,6 +785,10 @@ int main(int argc, char **argv)
    if (!configuration.get_int("ShowLast", shows_last_history_item)) {
      shows_last_history_item = 0;
    }
@@ -16,11 +15,11 @@ Index: gmrun-0.9.2/src/main.cc
    if (shows_last_history_item) {
      gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
    }
-@@ -662,7 +666,11 @@
+@@ -843,7 +847,11 @@ int main(int argc, char **argv)
  
-   gtk_widget_show(win);
+   gtk_widget_show(dialog);
  
--  gtk_window_set_focus(GTK_WINDOW(win), compline);
+-  gtk_window_set_focus(GTK_WINDOW(dialog), compline);
 +  if(last_history_selected){
 +    gtk_entry_select_region(GTK_ENTRY(compline), 0, strlen(gtk_entry_get_text(GTK_ENTRY(compline))));
 +  }else{
