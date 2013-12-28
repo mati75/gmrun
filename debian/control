@@ -1,7 +1,7 @@
 Source: gmrun
 Section: x11
 Priority: optional
-Maintainer: Alexandre De Dommelin <adedommelin@tuxz.net>
+Maintainer: Mateusz Łukasik <mati75@linuxmint.pl>
 Build-Depends: debhelper (>= 7), libgtk2.0-dev, libpopt-dev
 Standards-Version: 3.8.4
 Homepage: http://sourceforge.net/projects/gmrun/
