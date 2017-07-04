@@ -1,2 +1,0 @@
-?package(gmrun):needs="X11" section="Applications/File Management"\
-  title="gmrun" command="/usr/bin/gmrun"

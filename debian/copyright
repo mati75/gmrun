@@ -1,24 +1,59 @@
-This package was debianized by David B Harris <david@eelf.ddts.net> on
-Wed,  8 Aug 2001 08:05:49 -0400.
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: gmrun
+Upstream-Contact: Mihai Bazon <mishoo@infoiasi.ro>
+Source: https://sourceforge.net/projects/gmrun/
 
-It was downloaded from http://www.sourceforge.net/projects/gmrun/
+Files: *
+Copyright: 2000-2003 Mihai Bazon
+License: GPL-2+
 
-Upstream Author: Mihai Bazon <mishoo@infoiasi.ro>
+Files: debian/*
+Copyright: 2001 David B Harris <david@eelf.ddts.net>
+           2009 Barry deFreese <bdefreese@debian.org>
+           2009 Vincent Legout <vincent@legout.info>
+           2010 Alexandre De Dommelin <adedommelin@tuxz.net>
+           2017 Lukas Schwaighofer <lukas@schwaighofer.name>
+License: GPL-2
 
-Copyright:
-	Copyright (C) 2000-2003 Mihai Bazon
+License: GPL-2+
+ This program is free software; you can redistribute it
+ and/or modify it under the terms of the GNU General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later
+ version.
+ .
+ This program is distributed in the hope that it will be
+ useful, but WITHOUT ANY WARRANTY; without even the implied
+ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ PURPOSE.  See the GNU General Public License for more
+ details.
+ .
+ You should have received a copy of the GNU General Public
+ License along with this package; if not, write to the Free
+ Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ Boston, MA  02110-1301 USA
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file
+ `/usr/share/common-licenses/GPL-2'.
 
-License:
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2, as
-    published by the Free Software Foundation. See the file
-    /usr/share/common-licenses/GPL-2 for details.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software Foundation,
-    Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
+License: GPL-2
+ This program is free software; you can redistribute it
+ and/or modify it under the terms of the GNU General Public
+ License, version 2, as published by the Free Software
+ Foundation.
+ .
+ This program is distributed in the hope that it will be
+ useful, but WITHOUT ANY WARRANTY; without even the implied
+ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ PURPOSE.  See the GNU General Public License for more
+ details.
+ .
+ You should have received a copy of the GNU General Public
+ License along with this package; if not, write to the Free
+ Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ Boston, MA  02110-1301 USA
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file
+ `/usr/share/common-licenses/GPL-2'.

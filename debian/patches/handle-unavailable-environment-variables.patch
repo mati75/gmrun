@@ -1,0 +1,44 @@
+Description: handle unavailable environment variables
+ fix gmrun crash when the enivornment variables HOME and PATH are not available
+Author: Lukas Schwaighofer <lukas@schwaighofer.name>
+Bug-Debian: https://bugs.debian.org/715974
+
+--- a/src/gtkcompletionline.cc
++++ b/src/gtkcompletionline.cc
+@@ -328,7 +328,9 @@
+ static void
+ generate_path()
+ {
+-  char *path_cstr = (char*)getenv("PATH");
++  const char *path_cstr = (char*)getenv("PATH");
++  if (path_cstr == NULL)
++    path_cstr = "";
+ 
+   istringstream path_ss(path_cstr);
+   string tmp;
+--- a/src/prefs.cc
++++ b/src/prefs.cc
+@@ -35,13 +35,16 @@
+   file_name += GMRUNRC;
+   init(file_name);
+ 
+-  file_name = getenv("HOME");
+-  if (!file_name.empty()) {
+-    string::iterator i = file_name.end() - 1;
+-    if (*i == '/') file_name.erase(i);
+-    file_name += "/.";
+-    file_name += GMRUNRC;
+-    init(file_name);
++  const char *home_cstr = getenv("HOME");
++  if (home_cstr != NULL) {
++    file_name = home_cstr;
++    if (!file_name.empty()) {
++      string::iterator i = file_name.end() - 1;
++      if (*i == '/') file_name.erase(i);
++      file_name += "/.";
++      file_name += GMRUNRC;
++      init(file_name);
++    }
+   }
+ }
+ 

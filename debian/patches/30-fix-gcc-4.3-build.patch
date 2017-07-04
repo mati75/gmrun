@@ -1,12 +1,11 @@
 Description: include missing headers
 Author: Cyril Brulebois <cyril.brulebois@enst-bretagne.fr>
-Last-Update: <2013-12-28>
 
 --- a/src/ci_string.h
 +++ b/src/ci_string.h
 @@ -8,6 +8,7 @@
  
- #include <string.h>
+ #include <string>
  #include <ctype.h>
 +#include <cstring>
  
@@ -14,7 +13,7 @@ Last-Update: <2013-12-28>
  {
 --- a/src/gtkcompletionline.cc
 +++ b/src/gtkcompletionline.cc
-@@ -31,6 +31,7 @@
+@@ -30,6 +30,7 @@
  #include <sstream>
  #include <string>
  #include <vector>
@@ -22,23 +21,3 @@ Last-Update: <2013-12-28>
  using namespace std;
  
  #include "gtkcompletionline.h"
---- a/src/main.cc
-+++ b/src/main.cc
-@@ -16,6 +16,7 @@
- #include <gdk/gdkx.h>
- 
- #include <string>
-+#include <cstring>
- #include <iostream>
- #include <sstream>
- #include <vector>
---- a/src/prefs.cc
-+++ b/src/prefs.cc
-@@ -15,6 +15,7 @@
- #include <iostream>
- #include <stdio.h>
- #include <stdlib.h>
-+#include <stdlib.h>
- 
- #include <list>
- 

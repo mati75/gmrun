@@ -34,7 +34,7 @@ because the original program does not have a manual page.
 .SH OPTIONS
 If gmrun is invoked with a command-line parameter, that will be the initial content of the dialog box.
 .PP
-gmrun can be customized using a configuration file, ~/.gmrunrc . The system-wide configuration file is /etc/gmrunrc .
+gmrun can be customized both system-wide using \fI/etc/gmrunrc\fP and per-user in \fI~/.gmrunrc\fP. Settings in the per-user configuration overwrite system-wide settings.
 .PP
 The format of the configuration file is simple; "variable = value". To refer to a variable as opposed to setting it, enclose the variable in ${}.
 .TP
@@ -66,7 +66,7 @@ Whether to show the last command as initial text, or an empty textarea (1 or 0).
 .B Selected
 Whether the initial text should be selected or not (1 or 0).
 .SH URL HANDLING
-As opposed to entering a command, gmrun supports the entering of URLs. The included configuration file(/etc/gmrunrc) gives some examples. To set up your own url, create a variable in /etc/gmrunrc or ~/.gmrunrc with the format of "URL_protocol". For instance, URL_http. Here is an example:
+As opposed to entering a command, gmrun supports the entering of URLs. The included configuration file (\fI/etc/gmrunrc\fP) gives some examples. To set up your own url, create a variable in \fI/etc/gmrunrc\fP or \fI~/.gmrunrc\fP with the format of "URL_protocol". For instance, URL_http. Here is an example:
 .TP
 .B URL_http = /usr/bin/mozilla %u
 Using this, entering "http://www.slashdot.org" will run '/usr/bin/mozilla http://slashdot.org'.

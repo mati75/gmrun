@@ -1,7 +1,14 @@
 #!/usr/bin/make -f
 
-%:
-	dh $@ --with autoreconf
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
-override_dh_builddeb:
-	dh_builddeb -- -Zxz -z9
+%:
+	dh $@
+
+# passing --datadir explicitly to configure is required, because
+#   AC_DEFINE_UNQUOTED(PACKAGE_DATA_DIR, "${datadir}/${PACKAGE}")
+# otherwise sets PACKAGE_DATA_DIR to "${datarootdir}/gmrun" which is (without
+# further expansion) used as part of the path
+override_dh_auto_configure:
+	dh_auto_configure -- --datadir=/usr/share

@@ -1,10 +1,8 @@
-# Description: Handle more than 256 characters in the history
-# Author: <bdefreese@bddebian3.bddebian.com>
+Description: Handle more than 256 characters in the history
+Author: <bdefreese@bddebian3.bddebian.com>
 
-Index: gmrun-0.9.2/src/history.cc
-===================================================================
---- gmrun-0.9.2.orig/src/history.cc	2010-02-03 12:32:18.519767950 +0800
-+++ gmrun-0.9.2/src/history.cc	2010-02-03 12:32:43.586035039 +0800
+--- a/src/history.cc
++++ b/src/history.cc
 @@ -41,15 +41,14 @@
    ifstream f(filename);
    if (!f) return;

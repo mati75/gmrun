@@ -1,10 +1,9 @@
 Description: add "Selected" config option
 Author: Fernando Vezzosi <fv@linuxvar.it>
-Last-Update: <2013-12-28>
 
 --- a/src/main.cc
 +++ b/src/main.cc
-@@ -785,6 +785,10 @@ int main(int argc, char **argv)
+@@ -615,6 +615,10 @@
    if (!configuration.get_int("ShowLast", shows_last_history_item)) {
      shows_last_history_item = 0;
    }
@@ -15,11 +14,11 @@ Last-Update: <2013-12-28>
    if (shows_last_history_item) {
      gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
    }
-@@ -843,7 +847,11 @@ int main(int argc, char **argv)
+@@ -662,7 +666,11 @@
  
-   gtk_widget_show(dialog);
+   gtk_widget_show(win);
  
--  gtk_window_set_focus(GTK_WINDOW(dialog), compline);
+-  gtk_window_set_focus(GTK_WINDOW(win), compline);
 +  if(last_history_selected){
 +    gtk_entry_select_region(GTK_ENTRY(compline), 0, strlen(gtk_entry_get_text(GTK_ENTRY(compline))));
 +  }else{

@@ -9,11 +9,9 @@
  *      option, and provided that this copyright notice remains intact.
  *****************************************************************************/
 
-#include <X11/Xlib.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
-#include <gdk/gdkx.h>
 
 #include <string>
 #include <iostream>
@@ -159,7 +157,7 @@ run_the_command(const std::string& command, struct gigi* g)
 {
   string prog;
   std::vector<char*> argv;
-
+ 
   string cmd = command + ' ';
   istringstream iss(cmd);
 #ifdef DEBUG
@@ -282,10 +280,10 @@ static void
 on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 {
   string command(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-                     -1,
-                     NULL,
-                     NULL,
-                     NULL));
+				     -1,
+				     NULL,
+				     NULL,
+				     NULL));
   string tmp;
   string term;
 
@@ -297,8 +295,8 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
       term = "xterm -e";
     }
     tmp = term;
-    tmp += " ";
-    tmp += command;
+    tmp += " '";
+    tmp += command + "'";
   } else {
     if (!configuration.get_string("Terminal", term)) {
       tmp = "xterm";
@@ -390,10 +388,10 @@ static bool
 url_check(GtkCompletionLine *cl, struct gigi *g)
 {
   string text(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-                  -1,
-                  NULL,
-                  NULL,
-                  NULL));
+				  -1,
+				  NULL,
+				  NULL,
+				  NULL));
 
   string::size_type i;
   string::size_type sp;
@@ -492,10 +490,10 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
     return;
 
   string command = g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-                       -1,
-                       NULL,
-                       NULL,
-                       NULL);
+				       -1,
+				       NULL,
+				       NULL,
+				       NULL);
 
   string::size_type i;
   i = command.find_first_not_of(" \t");
@@ -524,204 +522,37 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
   }
 }
 
-/**
- Check if screen contain ponter and return coords
- Taked from Xfce: libxfcegui4
- */
-static gboolean
-screen_contains_pointer (GdkScreen *screen,
-                         int       *x,
-                         int       *y)
-{
-    GdkWindow    *root_window;
-    Window        root, child;
-    Bool          retval;
-    int           rootx, rooty;
-    int           winx, winy;
-    unsigned int  xmask;
-
-    root_window = gdk_screen_get_root_window (screen);
-
-    retval = XQueryPointer (GDK_SCREEN_XDISPLAY (screen),
-                            GDK_DRAWABLE_XID (root_window),
-                            &root, &child, &rootx, &rooty,
-                            &winx, &winy, &xmask);
-
-    if (x)
-        *x = retval ? rootx : -1;
-    if (y)
-        *y = retval ? rooty : -1;
-
-    return retval;
-}
-
-/**
- Found monitor that contain mouse pointer
- Taked from Xfce: libxfcegui4
- */
-static GdkScreen*
-gmrun_gdk_display_locate_monitor_with_pointer (GdkDisplay *display,
-                                               gint       *monitor_return)
-{
-    int n_screens, i;
-
-    if (display == NULL)
-        display = gdk_display_get_default ();
-
-    n_screens = gdk_display_get_n_screens (display);
-    for (i = 0; i < n_screens; i++)
-    {
-        GdkScreen  *screen;
-        int         x, y;
-
-        screen = gdk_display_get_screen (display, i);
-
-        if (screen_contains_pointer (screen, &x, &y))
-        {
-            if (monitor_return)
-                *monitor_return = gdk_screen_get_monitor_at_point (screen, x, y);
-
-            return screen;
-        }
-    }
-
-    if (monitor_return)
-        *monitor_return = 0;
-
-    return NULL;
-}
-
-/**
- Center window on given monitor
-  Taked from Xfce: libxfcegui4
- */
-static void
-//gmrun_gtk_window_center_on_monitor (GtkWindow *window,
-gmrun_gtk_window_place_on_monitor (GtkWindow *window,
-                                   GdkScreen *screen,
-                                   gint       monitor,
-                                   int        request_x = -1,
-                                   int        request_y = -1)
-
-{
-    GtkRequisition requisition;
-    GdkRectangle   geometry;
-    GdkScreen     *widget_screen;
-    gint           x, y;
-
-    gdk_screen_get_monitor_geometry (screen, monitor, &geometry);
-
-    /*
-     * Getting a size request requires the widget
-     * to be associated with a screen, because font
-     * information may be needed (Olivier).
-     */
-    widget_screen = gtk_widget_get_screen (GTK_WIDGET (window));
-    if (screen != widget_screen)
-    {
-        gtk_window_set_screen (GTK_WINDOW (window), screen);
-    }
-    /*
-     * We need to be realized, otherwise we may get
-     * some odd side effects (Olivier).
-     */
-    if (!GTK_WIDGET_REALIZED (GTK_WIDGET (window)))
-    {
-        gtk_widget_realize (GTK_WIDGET (window));
-    }
-    /*
-     * Yes, I know -1 is useless here (Olivier).
-     */
-    requisition.width = requisition.height = -1;
-    gtk_widget_size_request (GTK_WIDGET (window), &requisition);
-
-    if( request_x < 0 )
-    {
-        x = geometry.x + (geometry.width - requisition.width) / 2;
-    }
-    else
-    {
-        x = geometry.x + request_x;
-    }
-
-    if( request_y < 0 )
-    {
-        y = geometry.y + (geometry.height - requisition.height - 200) / 2;
-    }
-    else
-    {
-        y = geometry.y + request_y;
-    }
-
-    gtk_window_move (window, x, y);
-}
-
-static void
-gmrun_gtk_window_place_at(GtkWindow *window,
-                        int request_x,
-                        int request_y,
-                        int centered_width = 0,
-                        int centered_height = 0,
-                        int on_active = 0)
-{
-    GdkScreen *screen = NULL;
-    gint       monitor = 0;
-
-    if(on_active != 0)
-    {
-        screen = gmrun_gdk_display_locate_monitor_with_pointer(NULL, &monitor);
-    }
-
-    if( screen == NULL )
-    {
-        screen = gdk_screen_get_default();
-        monitor = 0;
-    }
-
-    if(centered_width != 0)
-    {
-        request_x = -1;
-    }
-
-    if(centered_height != 0)
-    {
-        request_y = -1;
-    }
-
-    gmrun_gtk_window_place_on_monitor(window,
-                                      screen,
-                                      monitor,
-                                      request_x,
-                                      request_y);
-}
-
 int main(int argc, char **argv)
 {
-  GtkWidget *dialog;
+  GtkWidget *win;
   GtkWidget *compline;
   GtkWidget *label_search;
   struct gigi g;
-
+  
 #ifdef MTRACE
   mtrace();
 #endif
 
   gtk_init(&argc, &argv);
 
-  dialog = gtk_dialog_new();
-  gtk_widget_realize(dialog);
-  gdk_window_set_decorations(dialog->window, GDK_DECOR_BORDER);
-  gtk_widget_set_name(dialog, "Msh_Run_Window");
-  gtk_window_set_title(GTK_WINDOW(dialog), "Execute program feat. completion");
-  gtk_window_set_policy(GTK_WINDOW(dialog), FALSE, FALSE, TRUE);
+  win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_widget_realize(win);
+  gdk_window_set_decorations(win->window, GDK_DECOR_BORDER);
+  gtk_widget_set_name(win, "Msh_Run_Window");
+  gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
+  gtk_window_set_policy(GTK_WINDOW(win), FALSE, FALSE, TRUE);
   // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
-  gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
-  gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
+  gtk_container_set_border_width(GTK_CONTAINER(win), 4);
+  gtk_signal_connect(GTK_OBJECT(win), "destroy",
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
+
+  GtkWidget *hbox = gtk_vbox_new(FALSE, 2);
+  gtk_widget_show(hbox);
+  gtk_container_add(GTK_CONTAINER(win), hbox);
 
   GtkWidget *hhbox = gtk_hbox_new(FALSE, 2);
   gtk_widget_show(hhbox);
-  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), hhbox, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(hbox), hhbox, FALSE, FALSE, 0);
 
   GtkWidget *label = gtk_label_new("Run program:");
   gtk_widget_show(label);
@@ -788,18 +619,12 @@ int main(int argc, char **argv)
     gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
   }
 
-  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), compline, TRUE, TRUE, 0);
-
+  gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
+  
   int prefs_top = 80;
   int prefs_left = 100;
-  int prefs_centred_by_width = 0;
-  int prefs_centred_by_height = 0;
-  int prefs_use_active_monitor = 0;
   configuration.get_int("Top", prefs_top);
-  configuration.get_int("Left", prefs_left);
-  configuration.get_int("CenteredByWidth", prefs_centred_by_width);
-  configuration.get_int("CenteredByHeight", prefs_centred_by_height);
-  configuration.get_int("UseActiveMonitor", prefs_use_active_monitor);
+  configuration.get_int("Left", prefs_left);  
 
   // parse commandline options
   gboolean geo_parsed;
@@ -807,38 +632,33 @@ int main(int argc, char **argv)
   char *geoptr;
   poptContext context;
   int option;
-
+  
   geoptr = geo_option;
-
+  
   struct poptOption options[] = {
     { "geometry", 'g', POPT_ARG_STRING | POPT_ARGFLAG_ONEDASH,
-      &geoptr, 0, "This option specifies the initial "
+      &geoptr, 0, "This option specifies the initial " 
       "size and location of the window.", NULL },
     POPT_AUTOHELP
-    { NULL, '\0', 0, NULL, 0 }
-  };
+    { NULL, '\0', 0, NULL, 0 } 
+  };  
 
   context = poptGetContext("popt1", argc, (const char**) argv, options, 0);
   option = poptGetNextOpt (context);
 
   if (strcmp (geoptr, ""))
   {
-    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (dialog),
-                        geoptr);
+    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (win),
+					    geoptr);
   }
   else
   {
-      gmrun_gtk_window_place_at(GTK_WINDOW(dialog),
-                                prefs_left,
-                                prefs_top,
-                                prefs_centred_by_width,
-                                prefs_centred_by_height,
-                                prefs_use_active_monitor);
+    gtk_widget_set_uposition(win, prefs_left, prefs_top);
   }
 
-  gtk_widget_show(dialog);
+  gtk_widget_show(win);
 
-  gtk_window_set_focus(GTK_WINDOW(dialog), compline);
+  gtk_window_set_focus(GTK_WINDOW(win), compline);
 
   gtk_main();
 }
