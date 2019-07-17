@@ -1,0 +1,3 @@
+gmrunrc etc/
+debian/desktop/gmrun.desktop usr/share/applications/
+debian/desktop/gmrun.svg usr/share/icons/hicolor/scalable/apps/

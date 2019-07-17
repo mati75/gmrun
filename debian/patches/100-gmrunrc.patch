@@ -1,0 +1,36 @@
+Description: update gmrunrc for Debian
+ * Use x-terminal-emulator and x-www-browser
+ * place the window in the center by default (remove Top/Left)
+ * Add default URL_https handler (x-www-browser)
+Author: Lukas Schwaighofer <lukas@schwaighofer.name>
+Bug-Debian: https://bugs.debian.org/198539
+Bug-Debian: https://bugs.debian.org/774096
+
+--- a/gmrunrc
++++ b/gmrunrc
+@@ -3,14 +3,12 @@
+ # GPL v2.0 applies
+ 
+ # Set terminal
+-Terminal = gnome-terminal --start-factory-server --use-factory
++Terminal = x-terminal-emulator
+ TermExec = ${Terminal} -e
+ AlwaysInTerm = ssh telnet ftp lynx mc vi vim pine centericq perldoc man
+ 
+ # Set window geometry (except height)
+ Width = 400
+-Top = 100
+-Left = 200
+ # Place window centered by the size of screen
+ CenteredByWidth = 0
+ CenteredByHeight = 0
+@@ -37,7 +35,8 @@ TabTimeout = 0
+ #   - %u gets replaced with the whole URL ("http://www.google.com")
+ #   - %s gets replaced with "//www.google.com".  This is useful for URL-s
+ #     like "man:printf" --> %s will get replaced with "printf"
+-URL_http = mozilla -remote "openURL(%u, new-window)"
++URL_http = x-www-browser '%u'
++URL_https = x-www-browser '%u'
+ URL_mailto = mozilla -remote "mailto(%s)"
+ URL_man = ${TermExec} 'man %s'
+ URL_info = ${TermExec} 'info %s'

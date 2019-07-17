@@ -1,0 +1,13 @@
+Description: include missing headers
+Author: Martin Michlmayr <tbm@cyrius.com>
+
+--- a/src/prefs.cc
++++ b/src/prefs.cc
+@@ -10,6 +10,7 @@
+  *****************************************************************************/
+ 
+ 
++#include <cstdlib>
+ #include <fstream>
+ #include <iostream>
+ #include <stdio.h>
