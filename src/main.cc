@@ -9,9 +9,11 @@
  *      option, and provided that this copyright notice remains intact.
  *****************************************************************************/
 
+#include <X11/Xlib.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <gdk/gdkx.h>
 
 #include <string>
 #include <iostream>
@@ -19,7 +21,6 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
-#include <popt.h>
 
 using namespace std;
 
@@ -116,7 +117,7 @@ GtkStyle* style_unique(GtkWidget *w)
 }
 
 static void
-run_with_system(const std::string& command, struct gigi* g)
+run_the_command(const std::string& command, struct gigi* g)
 {
   string cmd(command);
   cmd += '&';
@@ -137,125 +138,6 @@ run_with_system(const std::string& command, struct gigi* g)
     add_search_off_timeout(2000, g);
   }
 }
-
-#ifdef USE_SYSTEM
-
-// this version uses the "system" libc function to execute commands.
-static void
-run_the_command(const std::string& command, struct gigi* g)
-{
-  run_with_system(command, g);
-}
-
-#else
-
-// a more elaborate function to avoid system..  though I think that most will
-// prefer the above one.  I don't even remember why I coded this... but let it
-// be there.
-static void
-run_the_command(const std::string& command, struct gigi* g)
-{
-  string prog;
-  std::vector<char*> argv;
- 
-  string cmd = command + ' ';
-  istringstream iss(cmd);
-#ifdef DEBUG
-  cerr << cmd << endl;
-#endif
-  char what_quote = '"';
-  enum TYPE_CONTEXT {
-    CT_NORMAL = 0,
-    CT_QUOTE,
-    CT_ESCAPE
-  };
-  TYPE_CONTEXT context = CT_NORMAL;
-  TYPE_CONTEXT save_context = CT_NORMAL;
-  string tmp;
-  char c;
-
-  while (!iss.eof()) {
-    c = (char)iss.get();
-    if (iss.eof()) {
-      break;
-    }
-
-    switch (c) {
-     case '\\':
-      if (context != CT_ESCAPE) {
-        save_context = context;
-        context = CT_ESCAPE;
-      } else {
-        goto ordinary;
-      }
-      break;
-
-     case '\'':
-     case '"':
-      if (context == CT_ESCAPE) {
-        goto ordinary;
-      } else {
-        if (context == CT_QUOTE) {
-          if (what_quote == c) {
-            context = CT_NORMAL;
-          } else {
-            goto ordinary;
-          }
-        } else {
-          context = CT_QUOTE;
-          what_quote = c;
-        }
-      }
-      break;
-
-     case ' ':
-      if (context == CT_ESCAPE || context == CT_QUOTE) {
-        goto ordinary;
-      } else if (!tmp.empty()) {
-        if (prog.empty()) {
-          prog = tmp;
-        }
-        char *p = (char*)malloc(tmp.length() + 1);
-        memcpy(p, tmp.c_str(), tmp.length() + 1);
-        argv.push_back(p);
-        tmp.clear();
-      }
-      break;
-
-     ordinary:
-     default:
-      if (context == CT_ESCAPE) {
-        context = save_context;
-        tmp += c;
-      } else if (context == CT_QUOTE) {
-        tmp += c;
-      } else if (c != ' ') {
-        tmp += c;
-      }
-    }
-  }
-  argv.push_back(NULL);
-
-#ifdef DEBUG
-  for (vector<char*>::iterator i = argv.begin(); i != argv.end(); ++i) {
-    if (*i) {
-      cerr << "'" << *i << "'" << endl;
-    }
-  }
-#endif
-
-  execvp(prog.c_str(), (char**)&(*argv.begin()));
-  string error("ERROR: ");
-  error += strerror(errno);
-#ifdef DEBUG
-  cerr << error << endl;
-#endif
-
-  gtk_label_set_text(GTK_LABEL(g->w1), error.c_str());
-  gtk_widget_set_style(g->w1, style_notfound(g->w1));
-  add_search_off_timeout(2000, g);
-}
-#endif
 
 static void
 on_ext_handler(GtkCompletionLine *cl, const char* ext, struct gigi* g)
@@ -280,10 +162,10 @@ static void
 on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 {
   string command(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-				     -1,
-				     NULL,
-				     NULL,
-				     NULL));
+                     -1,
+                     NULL,
+                     NULL,
+                     NULL));
   string tmp;
   string term;
 
@@ -295,8 +177,8 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
       term = "xterm -e";
     }
     tmp = term;
-    tmp += " '";
-    tmp += command + "'";
+    tmp += " ";
+    tmp += command;
   } else {
     if (!configuration.get_string("Terminal", term)) {
       tmp = "xterm";
@@ -311,7 +193,7 @@ on_compline_runwithterm(GtkCompletionLine *cl, struct gigi* g)
 
   cl->hist->append(command.c_str());
   cl->hist->sync_the_file();
-  run_with_system(tmp.c_str(), g);
+  run_the_command(tmp.c_str(), g);
 }
 
 static gint
@@ -388,10 +270,10 @@ static bool
 url_check(GtkCompletionLine *cl, struct gigi *g)
 {
   string text(g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-				  -1,
-				  NULL,
-				  NULL,
-				  NULL));
+                  -1,
+                  NULL,
+                  NULL,
+                  NULL));
 
   string::size_type i;
   string::size_type sp;
@@ -490,10 +372,10 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
     return;
 
   string command = g_locale_from_utf8 (gtk_entry_get_text(GTK_ENTRY(cl)),
-				       -1,
-				       NULL,
-				       NULL,
-				       NULL);
+                       -1,
+                       NULL,
+                       NULL,
+                       NULL);
 
   string::size_type i;
   i = command.find_first_not_of(" \t");
@@ -522,37 +404,34 @@ on_compline_activated(GtkCompletionLine *cl, struct gigi *g)
   }
 }
 
+
 int main(int argc, char **argv)
 {
-  GtkWidget *win;
+  GtkWidget *dialog;
   GtkWidget *compline;
   GtkWidget *label_search;
   struct gigi g;
-  
+
 #ifdef MTRACE
   mtrace();
 #endif
 
   gtk_init(&argc, &argv);
 
-  win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_widget_realize(win);
-  gdk_window_set_decorations(win->window, GDK_DECOR_BORDER);
-  gtk_widget_set_name(win, "Msh_Run_Window");
-  gtk_window_set_title(GTK_WINDOW(win), "Execute program feat. completion");
-  gtk_window_set_policy(GTK_WINDOW(win), FALSE, FALSE, TRUE);
+  dialog = gtk_dialog_new();
+  gtk_widget_realize(dialog);
+  gdk_window_set_decorations(dialog->window, GDK_DECOR_BORDER);
+  gtk_widget_set_name(dialog, "Msh_Run_Window");
+  gtk_window_set_title(GTK_WINDOW(dialog), "Execute program feat. completion");
+  gtk_window_set_policy(GTK_WINDOW(dialog), FALSE, FALSE, TRUE);
   // gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
-  gtk_container_set_border_width(GTK_CONTAINER(win), 4);
-  gtk_signal_connect(GTK_OBJECT(win), "destroy",
+  gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
+  gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
                      GTK_SIGNAL_FUNC(gtk_main_quit), NULL);
-
-  GtkWidget *hbox = gtk_vbox_new(FALSE, 2);
-  gtk_widget_show(hbox);
-  gtk_container_add(GTK_CONTAINER(win), hbox);
 
   GtkWidget *hhbox = gtk_hbox_new(FALSE, 2);
   gtk_widget_show(hhbox);
-  gtk_box_pack_start(GTK_BOX(hbox), hhbox, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), hhbox, FALSE, FALSE, 0);
 
   GtkWidget *label = gtk_label_new("Run program:");
   gtk_widget_show(label);
@@ -619,46 +498,24 @@ int main(int argc, char **argv)
     gtk_completion_line_last_history_item(GTK_COMPLETION_LINE(compline));
   }
 
-  gtk_box_pack_start(GTK_BOX(hbox), compline, TRUE, TRUE, 0);
-  
+  gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), compline, TRUE, TRUE, 0);
+
   int prefs_top = 80;
   int prefs_left = 100;
+  int prefs_centred_by_width = 0;
+  int prefs_centred_by_height = 0;
+  int prefs_use_active_monitor = 0;
   configuration.get_int("Top", prefs_top);
-  configuration.get_int("Left", prefs_left);  
+  configuration.get_int("Left", prefs_left);
+  configuration.get_int("CenteredByWidth", prefs_centred_by_width);
+  configuration.get_int("CenteredByHeight", prefs_centred_by_height);
+  configuration.get_int("UseActiveMonitor", prefs_use_active_monitor);
 
-  // parse commandline options
-  gboolean geo_parsed;
-  char geo_option[30] = "";
-  char *geoptr;
-  poptContext context;
-  int option;
-  
-  geoptr = geo_option;
-  
-  struct poptOption options[] = {
-    { "geometry", 'g', POPT_ARG_STRING | POPT_ARGFLAG_ONEDASH,
-      &geoptr, 0, "This option specifies the initial " 
-      "size and location of the window.", NULL },
-    POPT_AUTOHELP
-    { NULL, '\0', 0, NULL, 0 } 
-  };  
+  gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER_ALWAYS);
 
-  context = poptGetContext("popt1", argc, (const char**) argv, options, 0);
-  option = poptGetNextOpt (context);
+  gtk_widget_show(dialog);
 
-  if (strcmp (geoptr, ""))
-  {
-    geo_parsed = gtk_window_parse_geometry (GTK_WINDOW (win),
-					    geoptr);
-  }
-  else
-  {
-    gtk_widget_set_uposition(win, prefs_left, prefs_top);
-  }
-
-  gtk_widget_show(win);
-
-  gtk_window_set_focus(GTK_WINDOW(win), compline);
+  gtk_window_set_focus(GTK_WINDOW(dialog), compline);
 
   gtk_main();
 }

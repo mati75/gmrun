@@ -1,11 +1,16 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src config
+ACLOCAL_AMFLAGS = -I m4
+SUBDIRS = src
+
+myrcdir = @sysconfdir@
+myrc_DATA = gmrunrc
+EXTRA_DIST = gmrunrc
 
 install-data-local:
 	@$(NORMAL_INSTALL)
 	if test -d $(srcdir)/pixmaps; then \
-	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/pixmaps; \
+	  $(SHELL) $(top_srcdir)/install-sh -d $(DESTDIR)$(pkgdatadir)/pixmaps; \
 	  for pixmap in $(srcdir)/pixmaps/*; do \
 	    if test -f $$pixmap; then \
 	      $(INSTALL_DATA) $$pixmap $(DESTDIR)$(pkgdatadir)/pixmaps; \
@@ -23,4 +28,3 @@ dist-hook:
 	  done \
 	fi
 
-EXTRA_DIST = gmrun.spec.in
