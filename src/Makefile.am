@@ -4,11 +4,10 @@ AM_CPPFLAGS = @GTK_CFLAGS@
 
 bin_PROGRAMS = gmrun
 
-gmrun_SOURCES = \
-	gtkcompletionline.cc gtkcompletionline.h \
-	history.cc history.h \
-	main.cc main.h \
-	prefs.cc prefs.h ci_string.h
+gmrun_SOURCES = config_prefs.c \
+	history.c \
+	gtkcompletionline.c \
+	main.c
 
 # gmrun_LDFLAGS = -s
 
