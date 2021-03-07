@@ -31,6 +31,8 @@
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
 
+#define CMD_LENGTH 1024
+
 enum
 {
    W_TEXT_STYLE_NORMAL,
@@ -50,7 +52,8 @@ GtkWidget * wlabel;
 GtkWidget * wlabel_search;
 
 /* preferences */
-int USE_XDG = 0;
+int USE_GLIB_XDG = 0;
+int SHELL_RUN = 1;
 
 /// BEGIN: TIMEOUT MANAGEMENT
 
@@ -93,12 +96,30 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
    }
 }
 
-static void
-run_the_command (const char * cmd)
+
+static void run_the_command (char * cmd)
 {
 #if DEBUG
    fprintf (stderr, "command: %s\n", cmd);
 #endif
+ if (SHELL_RUN)
+ {
+   // need to add extra &
+   if (strlen (cmd) < (CMD_LENGTH-10)) {
+      strcat (cmd, " &"); /* safe to use in this case */
+   }
+   int ret = system (cmd);
+   if (ret != -1) {
+      gmrun_exit ();
+   } else {
+      char errmsg[256];
+      snprintf (errmsg, sizeof(errmsg)-1, "ERROR: %s", strerror (errno));
+      set_info_text_color (wlabel, errmsg, W_TEXT_STYLE_NOTFOUND);
+      add_search_off_timeout (3000, NULL);
+   }
+ }
+ else // glib - more conservative approach and robust error reporting
+ {
    GError * error = NULL;
    gboolean success;
    int argc;
@@ -110,7 +131,6 @@ run_the_command (const char * cmd)
       add_search_off_timeout (3000, NULL);
       return;
    }
-
    success = g_spawn_async (NULL, argv, NULL,
                             G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
    if (argv) {
@@ -123,12 +143,14 @@ run_the_command (const char * cmd)
       g_error_free (error);
       add_search_off_timeout (3000, NULL);
    }
+ }
 }
+
 
 static void
 on_ext_handler (GtkCompletionLine *cl, const char * filename)
 {
- if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
    gchar * content_type, * mime_type, * msg;
    const gchar * handler;
@@ -172,9 +194,10 @@ on_ext_handler (GtkCompletionLine *cl, const char * filename)
  }
 }
 
+
 static void on_compline_runwithterm (GtkCompletionLine *cl)
 {
-   char cmd[512];
+   char cmd[CMD_LENGTH];
    char * term;
    char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
    g_strstrip (entry_text);
@@ -285,7 +308,7 @@ static void xdg_app_run_command (GAppInfo *app, const gchar *args)
 /* Handler for URLs  */
 static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
 {
- if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
    char * delim;
    const char * url, * protocol;
@@ -379,8 +402,7 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
 
 
 static char * escape_spaces (char * entry_text)
-{   // this for EXT handlers: replace " " with "\ "
-   // it's the only way to make the command run if the filename contains spaces
+{  // run file with glib: replace " " with "\ "
    GRegex * regex;
    char * quoted;
    if (!strstr (entry_text, "\\ ")) {
@@ -396,7 +418,7 @@ static char * escape_spaces (char * entry_text)
 /* Handler for extensions */
 static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
 {
- if (USE_XDG) // GLib XDG handling (freedesktop specification)
+ if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
    char *quoted, *content_type, *mime_type;
    GAppInfo *app_info;
@@ -432,7 +454,7 @@ static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
  }
  else //-------- custom EXTension handlers
  {
-   // example: file.html -> `xdg-open %s` -> `xdg-open file.html`
+   // example: file.html | xdg-open '%s' -> xdg-open 'file.html'
    char * cmd, * quoted;
    char * ext = strrchr (entry_text, '.');
    char * handler_format = NULL;
@@ -440,11 +462,12 @@ static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
       handler_format = config_get_handler_for_extension (ext);
    }
    if (handler_format) {
-      quoted = escape_spaces (entry_text);
-      if (strchr (handler_format, '%')) { // xdg-open %s
+      quoted = g_strcompress (entry_text); /* unescape chars */
+      if (strstr (handler_format, "%s")) {
          cmd = g_strdup_printf (handler_format, quoted);
-      } else { // xdg-open
-         cmd = g_strconcat (handler_format, " ", quoted, NULL);
+      }
+      else { // xdg-open
+         cmd = g_strconcat (handler_format, " '", quoted, "'", NULL);
       }
       history_append (cl->hist, entry_text);
       run_the_command (cmd);
@@ -470,7 +493,7 @@ static void on_compline_activated (GtkCompletionLine *cl)
       return;
    }
 
-   char cmd[512];
+   char cmd[CMD_LENGTH];
    char * AlwaysInTerm = NULL;
    char ** term_progs = NULL;
    char * selected_term_prog = NULL;
@@ -510,7 +533,6 @@ static void on_compline_activated (GtkCompletionLine *cl)
 static void gmrun_activate(void)
 {
    GtkWidget *dialog, * main_vbox;
-
    GtkWidget *label_search;
 
    GtkWidget * window = gtk_application_window_new (gmrun_app);
@@ -546,6 +568,10 @@ static void gmrun_activate(void)
    gtk_widget_set_name (compline, "gmrun_compline");
    gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
 
+   if (!config_get_int ("SHELL_RUN", &SHELL_RUN)) {
+      SHELL_RUN = 1;
+   }
+
    // don't show files starting with "." by default
    if (!config_get_int ("ShowDotFiles", &(GTK_COMPLETION_LINE(compline)->show_dot_files))) {
       GTK_COMPLETION_LINE(compline)->show_dot_files = 0;
@@ -554,8 +580,8 @@ static void gmrun_activate(void)
    if (!config_get_int ("TabTimeout", &tmp)) {
       ((GtkCompletionLine*)compline)->tabtimeout = tmp;
    }
-   if (!config_get_int ("USE_XDG", &USE_XDG)) {
-      USE_XDG = 0;
+   if (!config_get_int ("USE_GLIB_XDG", &USE_GLIB_XDG)) {
+      USE_GLIB_XDG = 0;
    }
 
    g_signal_connect(G_OBJECT(compline), "cancel",
@@ -731,8 +757,11 @@ int main(int argc, char **argv)
    config_init ();
    parse_command_line (argc, argv);
 
-#if GTK_CHECK_VERSION(3, 0, 0)
-   gmrun_app = gtk_application_new ("org.gtk.gmrun", G_APPLICATION_FLAGS_NONE);
+#if GTK_CHECK_VERSION(3, 4, 0)
+   // Handling cmd line args with GApplication is a nightmare
+   // follow this: https://developer.gnome.org/gtkmm-tutorial/stable/sec-multi-item-containers.html.en#boxes-command-line-options
+   argc = 1; /* hide args from GApplication */
+   gmrun_app = gtk_application_new ("org.gtk.gmrun", G_APPLICATION_NON_UNIQUE);
    g_signal_connect (gmrun_app, "activate", gmrun_activate, NULL);
    status = g_application_run (G_APPLICATION (gmrun_app), argc, argv);
    g_object_unref (gmrun_app);
