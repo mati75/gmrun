@@ -1,9 +1,26 @@
 ==========
+gmrun 1.1w
+==========
+
+PRESFIL (1):
+      Fix xterm -e handling with multiword queryes
+
+wdlkmpx (7):
+      restore system(3) call as the default option to run commands
+      main.c: ext_check(): escape spaces only if USE_XDG = 1
+      rename USE_XDG to USE_GLIB_XDG
+      gmrunrc: EXT syntax-> EXT:ext,etc = handler '%s'
+      main.c: main() gtk3.4+:  hide cmd line args from GApplication
+      main.c (gtk3.4+): G_APPLICATION_NON_UNIQUE
+      merge data/zrelease into autogen.sh ..
+
+
+==========
 gmrun 1.0w
 ==========
 
 Highlights:
-   - GTK 3 support (default - use --enable-gtk2 to compile the gtk2 port)
+   - GTK 3 support (default / use --enable-gtk2 to compile the gtk2 port)
    - should work with GTK 2.12+ (or even older GTK versions)
    - fixed broken CTRL-R / CTRL-S
    - gmrun is now a C application
@@ -13,8 +30,9 @@ Highlights:
    - support Glib XDG handling (set USE_XDG = 1 in gmrunrc)
    - keep support for custom extension and url handlers
      (the app is a bit more complex than it should because of this)
-   - restore --geometry param (it's a bit different)
+   - restored --geometry param (it's a bit different)
    - gmrunrc: Geometry = (read comments)
+     (this probably doesn't work with wayland and other protocols)
 
  changes since 0.9.5w
 
