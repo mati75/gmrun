@@ -31,8 +31,6 @@
 #include "gtkcompletionline.h"
 #include "config_prefs.h"
 
-#define CMD_LENGTH 1024
-
 enum
 {
    W_TEXT_STYLE_NORMAL,
@@ -100,22 +98,24 @@ static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 static void run_the_command (char * cmd)
 {
 #if DEBUG
-   fprintf (stderr, "command: %s\n", cmd);
+   fprintf (stderr, "cmd: %s\n", cmd);
 #endif
  if (SHELL_RUN)
  {
-   // need to add extra &
-   if (strlen (cmd) < (CMD_LENGTH-10)) {
-      strcat (cmd, " &"); /* safe to use in this case */
-   }
-   int ret = system (cmd);
+   /* need to add extra &   */
+   char * cmd2 = g_strconcat (cmd, " &", NULL);
+   int ret = system (cmd2);
+#if DEBUG
+   fprintf (stderr, "cmd2: %s\n", cmd2);
+#endif
+   g_free (cmd2);
    if (ret != -1) {
       gmrun_exit ();
    } else {
-      char errmsg[256];
-      snprintf (errmsg, sizeof(errmsg)-1, "ERROR: %s", strerror (errno));
+      gchar *errmsg = g_strconcat("ERROR: ", strerror(errno), NULL);
       set_info_text_color (wlabel, errmsg, W_TEXT_STYLE_NOTFOUND);
       add_search_off_timeout (3000, NULL);
+      g_free(errmsg);
    }
  }
  else // glib - more conservative approach and robust error reporting
@@ -197,29 +197,30 @@ on_ext_handler (GtkCompletionLine *cl, const char * filename)
 
 static void on_compline_runwithterm (GtkCompletionLine *cl)
 {
-   char cmd[CMD_LENGTH];
+   gchar *cmd;
    char * term;
    char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
    g_strstrip (entry_text);
 
    if (*entry_text) {
       if (config_get_string_expanded ("TermExec", &term)) {
-         snprintf (cmd, sizeof (cmd), "%s %s", term, entry_text);
+         cmd = g_strconcat( term, " ", entry_text, NULL);
          g_free (term);
       } else {
-         snprintf (cmd, sizeof (cmd), "xterm -e %s", entry_text);
+         cmd = g_strconcat( "xterm -e ", entry_text, NULL);
       }
    } else {
       if (config_get_string ("Terminal", &term)) {
-         strncpy (cmd, term, sizeof (cmd) - 1);
+         cmd = g_strdup(term);
       } else {
-         strncpy (cmd, "xterm", sizeof (cmd) - 1);
+         cmd = g_strdup("xterm");
       }
    }
 
    history_append (cl->hist, cmd);
    run_the_command (cmd);
    g_free (entry_text);
+   g_free (cmd);
 }
 
 static gboolean search_off_timeout ()
@@ -455,27 +456,33 @@ static gboolean ext_check (GtkCompletionLine *cl, char * entry_text)
  else //-------- custom EXTension handlers
  {
    // example: file.html | xdg-open '%s' -> xdg-open 'file.html'
-   char * cmd, * quoted;
+   char * cmd;
+   char * unescaped = g_strcompress (entry_text); /* unescape chars */
    char * ext = strrchr (entry_text, '.');
    char * handler_format = NULL;
+   if (access (unescaped, F_OK) == -1) {
+      // entry_text must be a valid filename
+      g_free (unescaped);
+      return FALSE;
+   }
    if (ext) {
       handler_format = config_get_handler_for_extension (ext);
    }
    if (handler_format) {
-      quoted = g_strcompress (entry_text); /* unescape chars */
       if (strstr (handler_format, "%s")) {
-         cmd = g_strdup_printf (handler_format, quoted);
+         cmd = g_strdup_printf (handler_format, unescaped);
       }
       else { // xdg-open
-         cmd = g_strconcat (handler_format, " '", quoted, "'", NULL);
+         cmd = g_strconcat (handler_format, " '", unescaped, "'", NULL);
       }
       history_append (cl->hist, entry_text);
       run_the_command (cmd);
       g_free (cmd);
-      g_free (quoted);
+      g_free (unescaped);
       return TRUE;
    }
 
+   g_free (unescaped);
    return FALSE;
  }
 }
@@ -493,7 +500,7 @@ static void on_compline_activated (GtkCompletionLine *cl)
       return;
    }
 
-   char cmd[CMD_LENGTH];
+   gchar * cmd;
    char * AlwaysInTerm = NULL;
    char ** term_progs = NULL;
    char * selected_term_prog = NULL;
@@ -514,16 +521,17 @@ static void on_compline_activated (GtkCompletionLine *cl)
    if (selected_term_prog) {
       char * TermExec;
       config_get_string_expanded ("TermExec", &TermExec);
-      snprintf (cmd, sizeof (cmd), "%s %s", TermExec, selected_term_prog);
+      cmd = g_strconcat(TermExec, " ", selected_term_prog, NULL);
       g_free (selected_term_prog);
       g_free (TermExec);
    } else {
-      strncpy (cmd, entry_text, sizeof (cmd) - 1);
+      cmd = g_strdup(entry_text);
    }
    g_free (entry_text);
 
    history_append (cl->hist, cmd);
    run_the_command (cmd);
+   g_free(cmd);
 }
 
 
