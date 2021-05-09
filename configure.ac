@@ -1,9 +1,10 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_INIT([gmrun], [1.1w])
+AC_INIT([gmrun], [1.2w])
 AM_CONFIG_HEADER([config.h])
+AC_CONFIG_AUX_DIR([autoconf])
+AC_CONFIG_MACRO_DIR([autoconf-m4])
 AM_INIT_AUTOMAKE([-Wall foreign])
-AC_CONFIG_MACRO_DIR([m4])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 m4_ifdef([AM_MAINTAINER_MODE], [AM_MAINTAINER_MODE])
 LT_INIT
@@ -64,6 +65,14 @@ AS_IF([test "x$enable_gtk3" = xyes],
 PKG_CHECK_MODULES([GTK], [$gtk_modules], [], [AC_ERROR([$errmsg])])
 AC_SUBST([GTK_CFLAGS])
 AC_SUBST([GTK_LIBS])
+
+AC_ARG_ENABLE(xdg,
+              AS_HELP_STRING([--enable-xdg],[follow xdg spec for configuration and history files location]),[],
+   enable_xdg=no)
+
+if test "x$enable_xdg" = "xyes"; then
+   CFLAGS="$CFLAGS -DFOLLOW_XDG_SPEC"
+fi
 
 #========================================================================
 
