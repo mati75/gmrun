@@ -12,3 +12,7 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 # further expansion) used as part of the path
 override_dh_auto_configure:
 	dh_auto_configure -- --datadir=/usr/share --sysconfdir=/etc --enable-xdg
+
+override_dh_auto_clean:
+	touch config.mk
+	dh_auto_clean
