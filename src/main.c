@@ -15,15 +15,11 @@
  * 
  */
 
-#include <X11/Xlib.h>
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-#include <gdk/gdkx.h>
-
-#ifdef MTRACE
-#include <mcheck.h>
-#endif
 
 #include <unistd.h>
 #include <errno.h>
@@ -39,15 +35,15 @@ enum
    W_TEXT_STYLE_UNIQUE,
 };
 
-GtkApplication * gmrun_app;
+GtkApplication * gmrun_app = NULL;
 
 char * gmrun_text = NULL;
 static void gmrun_exit (void);
 GtkAllocation window_geom = { -1, -1, -1, -1 };
 /* widgets that are used in several functions */
-GtkWidget * compline;
-GtkWidget * wlabel;
-GtkWidget * wlabel_search;
+GtkWidget * compline = NULL;
+GtkWidget * wlabel = NULL;
+GtkWidget * wlabel_search = NULL;
 
 /* preferences */
 int USE_GLIB_XDG = 0;
@@ -666,11 +662,13 @@ static void parse_command_line (int argc, char ** argv)
 {
    // --geometry / parse commandline options
    static char *geometry_str = NULL;
+   static gboolean show_version;
    GError *error = NULL;
    GOptionContext *context = NULL;
    static GOptionEntry entries[] =
    {
       { "geometry", 'g', 0, G_OPTION_ARG_STRING, &geometry_str, "This option specifies the initial size and location of the window.", NULL, },
+      { "version",  'v', 0, G_OPTION_ARG_NONE,   &show_version, "Show version", NULL, },
       { NULL },
    };
 
@@ -691,6 +689,14 @@ static void parse_command_line (int argc, char ** argv)
       gmrun_text = argv[1];
    }
    // --
+
+   if (show_version) {
+#ifdef HAVE_CONFIG_H
+      puts (VERSION);
+#endif
+      gmrun_exit ();
+      exit (0);
+   }
 
    if (!geometry_str)
    {
@@ -749,17 +755,17 @@ static void parse_command_line (int argc, char ** argv)
 
 void gmrun_exit(void)
 {
-   gtk_widget_destroy (compline);
+   if (compline) {
+      gtk_widget_destroy (compline);
+   }
    config_destroy ();
-   g_application_quit (G_APPLICATION (gmrun_app));
+   if (gmrun_app) {
+      g_application_quit (G_APPLICATION (gmrun_app));
+   }
 }
 
 int main(int argc, char **argv)
 {
-
-#ifdef MTRACE
-   mtrace();
-#endif
    int status = 0;
 
    config_init ();
@@ -773,14 +779,16 @@ int main(int argc, char **argv)
    g_signal_connect (gmrun_app, "activate", gmrun_activate, NULL);
    status = g_application_run (G_APPLICATION (gmrun_app), argc, argv);
    g_object_unref (gmrun_app);
-#else
+
+#elif GTK_MAJOR_VERSION > 2
+#  error "Gtk >= 3.4 is required"
+
+#else /* gtk2 */
+   // gmrun_app must point to *something*
+   gmrun_app = (void *) &SHELL_RUN; //gtkcompat.h: #define g_application_quit(app) gtk_main_quit()
    gtk_init (&argc, &argv);
    gmrun_activate ();
    gtk_main ();
-#endif
-
-#ifdef MTRACE
-   muntrace();
 #endif
 
    return (status);
