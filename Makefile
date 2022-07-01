@@ -1,6 +1,5 @@
-# http://unlicense.org/
 
-SUBDIRS = src data
+SUBDIRS = data po src 
 
 DISTCLEAN_FILES = 
 
@@ -8,34 +7,68 @@ DISTCLEAN_FILES =
 
 include config.mk
 
-DISTCLEAN_FILES += config.h config.mk config.log
-
-WSCRIPT = w_conf/_exec_make_dir.sh $(MAKE)
+DISTCLEAN_FILES += config.h config.mk config.log config.sh
 
 MAKEFLAGS += --no-print-directory
 
-all: subdirs
-
-subdirs:
-	@sh $(WSCRIPT) "" $(SUBDIRS)
+all:
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 strip:
-	@sh $(WSCRIPT) strip $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 clean:
-	@sh $(WSCRIPT) clean $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 distclean:
-	@sh $(WSCRIPT) distclean $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 	-rm -f $(DISTCLEAN_FILES)
 
 install:
-	@sh $(WSCRIPT) install $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 install-strip:
-	@sh $(WSCRIPT) install-strip $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
 
 uninstall:
-	@sh $(WSCRIPT) uninstall $(SUBDIRS)
+	@for dir in ${SUBDIRS} ; do \
+		echo "$(MAKE): Entering directory [$${dir}]"; \
+		$(MAKE) -C $${dir} $@ || exit 1; \
+		echo "$(MAKE): Leaving directory [$${dir}]"; \
+	done
+
+check:
+
+distcheck:
+
+installcheck:
+
+dist:
+	sh configure release dist
 
 .PHONY: subdirs $(SUBDIRS)
+

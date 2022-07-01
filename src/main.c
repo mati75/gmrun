@@ -19,8 +19,17 @@
 #include <config.h>
 #endif
 
-#include <gtk/gtk.h>
+#if ENABLE_NLS
+#include <locale.h>
+#include <libintl.h>
+#define _(x) gettext(x)
+#define N_(x) (x)
+#else
+#define _(x)  (x)
+#define N_(x) (x)
+#endif
 
+#include <gtk/gtk.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -39,6 +48,7 @@ GtkApplication * gmrun_app = NULL;
 
 char * gmrun_text = NULL;
 static void gmrun_exit (void);
+static gint signal_connect_id_cb_dialog_size_allocate;
 GtkAllocation window_geom = { -1, -1, -1, -1 };
 /* widgets that are used in several functions */
 GtkWidget * compline = NULL;
@@ -76,6 +86,10 @@ static void add_search_off_timeout (guint32 timeout, GSourceFunc func)
 static void set_info_text_color (GtkWidget *w, const char *text, int spec)
 {
    char *markup = NULL;
+   if (spec == W_TEXT_STYLE_NORMAL) {
+       gtk_label_set_text (GTK_LABEL(w), text);
+       return;
+   }
    static const char * colors[] = {
       "black", /* W_TEXT_STYLE_NORMAL */
       "red",   /* W_TEXT_STYLE_NOTFOUND */
@@ -143,8 +157,7 @@ static void run_the_command (char * cmd)
 }
 
 
-static void
-on_ext_handler (GtkCompletionLine *cl, const char * filename)
+static void on_ext_handler (GtkCompletionLine *cl, const char * filename)
 {
  if (USE_GLIB_XDG) // GLib XDG handling (freedesktop specification)
  {
@@ -161,7 +174,7 @@ on_ext_handler (GtkCompletionLine *cl, const char * filename)
          g_free (mime_type);
          if (app_info) {
             handler = g_app_info_get_commandline (app_info);
-            msg = g_strconcat("Handler: ", handler, NULL);
+            msg = g_strconcat(_("Program: "), handler, NULL);
             gtk_label_set_text (GTK_LABEL (wlabel_search), msg);
             gtk_widget_show (wlabel_search);
 
@@ -182,7 +195,7 @@ on_ext_handler (GtkCompletionLine *cl, const char * filename)
    }
    const char * handler = config_get_handler_for_extension (ext);
    if (handler) {
-      char * tmp = g_strconcat ("Handler: ", handler, NULL);
+      char * tmp = g_strconcat (_("Program: "), handler, NULL);
       gtk_label_set_text (GTK_LABEL (wlabel_search), tmp);
       gtk_widget_show (wlabel_search);
       g_free (tmp);
@@ -221,64 +234,58 @@ static void on_compline_runwithterm (GtkCompletionLine *cl)
 
 static gboolean search_off_timeout ()
 {
-   set_info_text_color (wlabel, "Run program:", W_TEXT_STYLE_NORMAL);
+   set_info_text_color (wlabel, _("Run:"), W_TEXT_STYLE_NORMAL);
    gtk_widget_hide (wlabel_search);
    g_search_off_timeout_id = 0;
    return G_SOURCE_REMOVE;
 }
 
-static void
-on_compline_unique (GtkCompletionLine *cl)
+static void on_compline_unique (GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "unique", W_TEXT_STYLE_UNIQUE);
+   set_info_text_color (wlabel, _("unique"), W_TEXT_STYLE_UNIQUE);
    add_search_off_timeout (1000, NULL);
 }
 
-static void
-on_compline_notunique (GtkCompletionLine *cl)
+static void on_compline_notunique (GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "not unique", W_TEXT_STYLE_NOTUNIQUE);
+   set_info_text_color (wlabel, _("not unique"), W_TEXT_STYLE_NOTUNIQUE);
    add_search_off_timeout (1000, NULL);
 }
 
-static void
-on_compline_incomplete (GtkCompletionLine *cl)
+static void on_compline_incomplete (GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "not found", W_TEXT_STYLE_NOTFOUND);
+   set_info_text_color (wlabel, _("not found"), W_TEXT_STYLE_NOTFOUND);
    add_search_off_timeout (1000, NULL);
 }
 
-static void
-on_search_mode (GtkCompletionLine *cl)
+static void on_search_mode (GtkCompletionLine *cl)
 {
    if (cl->hist_search_mode == TRUE) {
       gtk_widget_show (wlabel_search);
-      gtk_label_set_text (GTK_LABEL (wlabel), "Search:");
+      gtk_label_set_text (GTK_LABEL (wlabel), _("Search:"));
       gtk_label_set_text (GTK_LABEL (wlabel_search), cl->hist_word);
    } else {
       gtk_widget_hide (wlabel_search);
-      gtk_label_set_text (GTK_LABEL (wlabel), "Search OFF");
+      gtk_label_set_text (GTK_LABEL (wlabel), _("Search OFF"));
       add_search_off_timeout (1000, NULL);
    }
 }
 
-static void
-on_search_letter(GtkCompletionLine *cl, GtkWidget *label)
+static void on_search_letter (GtkCompletionLine *cl, GtkWidget *label)
 {
    gtk_label_set_text (GTK_LABEL(label), cl->hist_word);
 }
 
 static gboolean search_fail_timeout (gpointer user_data)
 {
-   set_info_text_color (wlabel, "Search:", W_TEXT_STYLE_NOTUNIQUE);
+   set_info_text_color (wlabel, _("Search:"), W_TEXT_STYLE_NOTUNIQUE);
    g_search_off_timeout_id = 0;
    return G_SOURCE_REMOVE;
 }
 
-static void
-on_search_not_found(GtkCompletionLine *cl)
+static void on_search_not_found(GtkCompletionLine *cl)
 {
-   set_info_text_color (wlabel, "Not Found!", W_TEXT_STYLE_NOTFOUND);
+   set_info_text_color (wlabel, _("Not Found!"), W_TEXT_STYLE_NOTFOUND);
    add_search_off_timeout (1000, (GSourceFunc) search_fail_timeout);
 }
 
@@ -314,27 +321,21 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
    if (!delim || !*(delim+1)) {
       return FALSE;
    }
-   protocol = entry_text;
    url = delim + 1;
-   *delim = 0;
-
    if (url[0] == '/' && url[1] == '/')
    {
+      protocol = entry_text;
+      *delim = 0;
       app = g_app_info_get_default_for_uri_scheme (protocol);
-      if (app) { // found known uri handler for protocol
-         *delim = ':';
+      *delim = ':';
+      if (app)
+      { // found known uri handler for protocol
          xdg_app_run_command (app, entry_text);
          history_append (cl->hist, entry_text);
          g_object_unref (app);
-      } else {
-         char *tmp = g_strconcat ("No URL handler for [", protocol, "]", NULL);
-         set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
-         add_search_off_timeout (1000, NULL);
-         g_free (tmp);
+         return TRUE;
       }
-      return TRUE;
    }
-   *delim = ':';
    return FALSE;
 
  }
@@ -381,19 +382,15 @@ static gboolean url_check (GtkCompletionLine *cl, char * entry_text)
       g_free (url_handler);
    }
 
+   g_free (config_key);
+   g_free (tmp);
    if (cmd) {
       history_append (cl->hist, entry_text);
       run_the_command (cmd);
       g_free (cmd);
-   } else {
-      g_free (tmp);
-      tmp = g_strconcat ("No URL handler for [", config_key, "]", NULL);
-      set_info_text_color (wlabel, tmp, W_TEXT_STYLE_NOTFOUND);
-      add_search_off_timeout (1000, NULL);
+      return TRUE;
    }
-   g_free (config_key);
-   g_free (tmp);
-   return TRUE;
+   return FALSE;
  }
 }
 
@@ -490,8 +487,8 @@ static void on_compline_activated (GtkCompletionLine *cl)
    char * entry_text = g_strdup (gtk_entry_get_text (GTK_ENTRY(cl)));
    g_strstrip (entry_text);
 
-   if (url_check (cl, entry_text) == TRUE
-       || ext_check (cl, entry_text) == TRUE)  {
+   if (url_check(cl,entry_text) == TRUE || ext_check(cl,entry_text) == TRUE)
+   {
       g_free (entry_text);
       return;
    }
@@ -531,6 +528,21 @@ static void on_compline_activated (GtkCompletionLine *cl)
 }
 
 
+static void cb_dialog_size_allocate (GtkWidget *w, GdkRectangle *alloc, gpointer udata)
+{
+    // https://stackoverflow.com/questions/4886420/gtk-forbid-vertical-resize-of-gtkwindow
+    GdkGeometry hints;
+    g_signal_handler_disconnect (G_OBJECT(w), signal_connect_id_cb_dialog_size_allocate);
+    /* dummy values for minx/max to no restrict vertical resizing */
+    hints.min_width = 0;
+    hints.max_width = G_MAXINT;
+    /* do not allow vertical resizing */
+    hints.min_height = alloc->height;
+    hints.max_height = alloc->height;
+    gtk_window_set_geometry_hints (GTK_WINDOW(w), NULL, &hints,
+                                   GDK_HINT_MIN_SIZE | GDK_HINT_MAX_SIZE);
+}
+
 // =============================================================
 
 
@@ -542,24 +554,26 @@ static void gmrun_activate(void)
    GtkWidget * window = gtk_application_window_new (gmrun_app);
    dialog = gtk_dialog_new();
    gtk_window_set_transient_for( (GtkWindow*)dialog, (GtkWindow*)window );
-   gtk_widget_realize(dialog);
+   gtk_window_set_title (GTK_WINDOW(window), "gmrun");
+   gtk_window_set_title (GTK_WINDOW(dialog), "gmrun");
    main_vbox = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
 
    // this removes the title bar..
+   gtk_widget_realize (dialog);
    GdkWindow *gwin = gtk_widget_get_window (GTK_WIDGET(dialog));
    gdk_window_set_decorations (gwin, GDK_DECOR_BORDER);
 
-   gtk_widget_set_name (GTK_WIDGET (dialog), "gmrun");
-   gtk_window_set_title (GTK_WINDOW(window), "A simple launcher with completion");
-
    gtk_container_set_border_width(GTK_CONTAINER(dialog), 4);
-   g_signal_connect(G_OBJECT(dialog), "destroy",
-                  G_CALLBACK(gmrun_exit), NULL);
+   g_signal_connect (G_OBJECT(dialog), "destroy",
+                     G_CALLBACK(gmrun_exit), NULL);
+   signal_connect_id_cb_dialog_size_allocate = 
+      g_signal_connect (G_OBJECT(dialog), "size-allocate",
+                        G_CALLBACK(cb_dialog_size_allocate), NULL);
 
    GtkWidget *hhbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
    gtk_box_pack_start (GTK_BOX (main_vbox), hhbox, FALSE, FALSE, 0);
 
-   GtkWidget *label = gtk_label_new("Run program:");
+   GtkWidget *label = gtk_label_new (_("Run:"));
    gtk_box_pack_start (GTK_BOX(hhbox), label, FALSE, FALSE, 10);
    gtkcompat_widget_set_halign_left (GTK_WIDGET (label));
    wlabel = label;
@@ -569,7 +583,7 @@ static void gmrun_activate(void)
    wlabel_search = label_search;
 
    compline = gtk_completion_line_new();
-   gtk_widget_set_name (compline, "gmrun_compline");
+
    gtk_box_pack_start (GTK_BOX (main_vbox), compline, TRUE, TRUE, 0);
 
    if (!config_get_int ("SHELL_RUN", &SHELL_RUN)) {
@@ -635,8 +649,8 @@ static void gmrun_activate(void)
       gtk_window_set_default_size (GTK_WINDOW (dialog), window_geom.width,
                                    window_geom.height);
    } else {
-      /* default width = 450 */
-      gtk_window_set_default_size (GTK_WINDOW (dialog), 450, -1);
+      /* default width = 500 */
+      gtk_window_set_default_size (GTK_WINDOW (dialog), 500, -1);
    }
 
    // window icon
@@ -653,7 +667,13 @@ static void gmrun_activate(void)
 
    gtk_widget_show_all (dialog);
 
-   gtk_window_set_focus(GTK_WINDOW(dialog), compline);
+   gtk_window_set_focus (GTK_WINDOW(dialog), compline);
+   if (gmrun_text) {
+      // clear selection if command (text) is supplied as a parameter
+      compline_clear_selection (GTK_COMPLETION_LINE (compline));
+      // free memory
+      free (gmrun_text);
+   }
 }
 
 // =============================================================
@@ -661,7 +681,8 @@ static void gmrun_activate(void)
 static void parse_command_line (int argc, char ** argv)
 {
    // --geometry / parse commandline options
-   static char *geometry_str = NULL;
+   static char *geometry_str = NULL, *tmp = NULL;
+   int i;
    static gboolean show_version;
    GError *error = NULL;
    GOptionContext *context = NULL;
@@ -686,7 +707,17 @@ static void parse_command_line (int argc, char ** argv)
    if (context) g_option_context_free (context);
    if (error)   g_error_free (error);
    if (argc >= 2) {
-      gmrun_text = argv[1];
+      for (i = 1; i < argc; i++)
+      { // all cli arguments are part of the same line
+        if (tmp) {
+            gmrun_text = g_strconcat (tmp, " ", argv[i], NULL);
+            free (tmp);
+            tmp = gmrun_text;
+        } else {
+            tmp = strdup (argv[i]);
+            gmrun_text = tmp;
+        }
+      }
    }
    // --
 
@@ -767,6 +798,12 @@ void gmrun_exit(void)
 int main(int argc, char **argv)
 {
    int status = 0;
+
+#ifdef ENABLE_NLS
+   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALEDIR);
+   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+   textdomain (GETTEXT_PACKAGE);
+#endif
 
    config_init ();
    parse_command_line (argc, argv);
